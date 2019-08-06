@@ -3,8 +3,8 @@ import logger from 'morgan';
 import bodyParser from 'body-parser';
 
 import Queue from 'bull';
-import {updateDB, sleep} from './utils';
-import {CONFIG} from './config';
+import {updateDB, sleep} from './utils/misc';
+import {CONFIG} from './common';
 
 const queue = new Queue('worker', {redis: CONFIG.redis});
 
@@ -62,6 +62,11 @@ app.use((err, req, res, next) => {
 });
 
 process.on('unhandledRejection', (e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+process.on('unhandledException', (e) => {
   console.error(e);
   process.exit(1);
 });

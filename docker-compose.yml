@@ -13,7 +13,7 @@ services:
       - 31380:3000
     restart: always
   postgres:
-    image: postgres:10-alpine
+    image: postgres:11-alpine
     restart: always
     volumes:
       - ./docker-configs/postgresql.conf:/etc/postgresql.conf
@@ -33,7 +33,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: password
     command: /bin/bash /entry.sh
   redis:
-    image: redis:4-alpine
+    image: redis:5-alpine
     restart: always
     volumes:
       - ./docker-configs/redis.conf:/etc/redis.conf

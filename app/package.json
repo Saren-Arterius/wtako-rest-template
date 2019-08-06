@@ -16,18 +16,18 @@
     "build-watch": "babel app/src --out-dir app/dist --copy-files --watch"
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "bull": "^3.4.4",
-    "cheerio": "^1.0.0-rc.2",
-    "express": "^4.16.3",
-    "firebase-admin": "^5.13.1",
-    "ioredis": "^3.2.2",
-    "knex": "^0.15.2",
-    "morgan": "^1.9.0",
+    "body-parser": "^1.19.0",
+    "bull": "^3.10.0",
+    "cheerio": "^1.0.0-rc.3",
+    "express": "^4.17.1",
+    "firebase-admin": "^8.3.0",
+    "ioredis": "^4.14.0",
+    "knex": "^0.19.1",
+    "morgan": "^1.9.1",
     "mz": "^2.7.0",
-    "pg": "^7.4.3",
-    "request": "^2.87.0",
-    "request-promise": "^4.2.2"
+    "pg": "^7.12.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {
     "@types/express": "^4.16.0",

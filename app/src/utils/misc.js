@@ -1,6 +1,5 @@
-import {exec} from 'mz/child_process';
-import {CONFIG} from './config';
-import {knex} from './common';
+import rp from 'request-promise';
+import {knex, CONFIG} from '../common';
 
 export const sleep = ms => new Promise(rs => setTimeout(rs, ms));
 
@@ -16,7 +15,7 @@ export const updateDB = async () => {
     await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
   }
   console.log('[DB] knex migrate:latest');
-  await exec('npx knex migrate:latest --knexfile ../knexfile.js');
+  await knex.migrate.latest({directory: '../migrations'});
 };
 
 export const normalizeURL = (base: string, url: string) => {
@@ -53,9 +52,24 @@ export const trimChar = (string, charsToRemove) => {
 };
 
 export const counter = (words: [string]) => {
-  const freqs = {};
+  const count = {};
   words.forEach((w) => {
-    freqs[w] = (freqs[w] || 0) + 1;
+    count[w] = (count[w] || 0) + 1;
   });
-  return freqs;
+  return count;
+};
+
+export const tryPurgeCFCache = async (files: [String]) => {
+  const body = files ?
+    {files: files.map(f => `${CONFIG.cfPurgeCache.prependPath}${f}`)} :
+    {purge_everything: true};
+  try {
+    console.log('tryPurgeCFCache', body);
+    const res = await rp(Object.assign({}, CONFIG.cfPurgeCache.defaultOptions, {body}));
+    console.log(res);
+    return true;
+  } catch (e) {
+    console.error(e);
+  }
+  return false;
 };
