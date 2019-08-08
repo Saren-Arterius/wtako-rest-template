@@ -1,10 +1,10 @@
 version: "2"
 services:
-  node:
+  app:
     build: ./app
     volumes:
       - ./app:/src/app
-      - ./logs/npm:/home/node/.npm/_logs
+      - ./app/logs/npm:/home/node/.npm/_logs
     links:
       - redis:redis
     depends_on:
@@ -13,21 +13,20 @@ services:
       - 31380:3000
     restart: always
   postgres:
-    image: postgres:11-alpine
+    build: ./postgres
     restart: always
     volumes:
-      - ./docker-configs/postgresql.conf:/etc/postgresql.conf
-      - ./docker-data/postgres:/var/lib/postgresql/data
+      - ./postgres/config/postgresql.conf:/etc/postgresql.conf
+      - ./postgres/data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: password
-    command: postgres -c config_file=/etc/postgresql.conf
   pgadmin:
     image: dpage/pgadmin4
     restart: always
     ports:
       - 127.0.0.1:31300:80
     volumes:
-      - ./docker-data/pgadmin:/var/lib/pgadmin
+      - ./pgadmin/data:/var/lib/pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: password
@@ -36,8 +35,8 @@ services:
     image: redis:5-alpine
     restart: always
     volumes:
-      - ./docker-configs/redis.conf:/etc/redis.conf
-      - ./docker-data/redis:/var/lib/redis
+      - ./redis/config/redis.conf:/etc/redis.conf
+      - ./redis/data:/var/lib/redis
     command: redis-server /etc/redis.conf
   phpredmin:
     image: sasanrose/phpredmin

@@ -2,7 +2,8 @@
 echo Resetting DB in 3 seconds...
 sleep 3
 docker-compose down
-sudo rm -r docker-data/postgres docker-data/redis
-sudo mkdir -p docker-data/redis && sudo chown -R 100:101 docker-data/redis
+sudo rm -rf redis/data postgres/data
+sudo mkdir -p redis/data
+sudo chown -R 100:101 redis/data
 docker-compose up -d
-docker-compose logs --tail=1000 -f node
+docker-compose logs --tail=1000 -f app
