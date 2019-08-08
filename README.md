@@ -7,7 +7,7 @@ Ensure docker-compose installed:
 1. `# ./reset.sh`
 
 # Dev start (also starts on boot)
-1. `$ ./dev.sh`
+1. `# ./dev.sh`
 
 # Prod start (also starts on boot)
 1. Change last line of `app/Dockerfile` to `CMD yarn prod`
