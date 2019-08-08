@@ -61,14 +61,11 @@ app.use((err, req, res, next) => {
   res.status(500).send();
 });
 
-process.on('unhandledRejection', (e) => {
-  console.error(e);
-  process.exit(1);
-});
-
-process.on('unhandledException', (e) => {
-  console.error(e);
-  process.exit(1);
+process.on('unhandledRejection', (reason, p) => {
+  console.error(reason, 'Unhandled Rejection at Promise', p);
+}).on('uncaughtException', (err) => {
+  console.error(err, 'Uncaught Exception thrown');
+  // process.exit(1);
 });
 
 module.exports = app;
