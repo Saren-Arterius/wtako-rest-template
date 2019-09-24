@@ -10,8 +10,8 @@
   "scripts": {
     "start": "sh -c 'cd app/dist && node bin/server.js'",
     "clean": "rm -rf dist && mkdir dist",
-    "dev": "yarn build-watch & sleep 5 && nodemon --exec sh -c 'yarn start'",
-    "prod": "yarn build && yarn start",
+    "dev": "npm run build-watch & sleep 5 && nodemon --exec sh -c 'npm start'",
+    "prod": "npm run build && npm start",
     "build": "babel app/src --out-dir app/dist --copy-files",
     "build-watch": "babel app/src --out-dir app/dist --copy-files --watch"
   },
