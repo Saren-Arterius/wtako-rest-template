@@ -1,4 +1,4 @@
-FROM postgres:11-alpine
+FROM groonga/pgroonga:latest-alpine-11
 
 RUN sh -c 'echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && apk update'
 RUN apk add git build-base
