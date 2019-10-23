@@ -30,13 +30,13 @@ export class CacheManager {
 
   route (idExtractFromReq, isDisabledFn) {
     return async (req, res, next) => {
-      this.id = idExtractFromReq(req);
-      req.cm = this;
+      const cm = new CacheManager(this.type, this.ttl, idExtractFromReq(req));
+      req.cm = cm;
       if (isDisabledFn && isDisabledFn(req)) {
-        this.disabled = true;
+        cm.disabled = true;
         return next();
       }
-      this.disabled = false;
+      cm.disabled = false;
       const value = await redis.get(this.key());
       if (value !== null) return res.send(JSON.parse(value));
       return next();
@@ -45,8 +45,8 @@ export class CacheManager {
 
   routeWithoutCache (idExtractFromReq) {
     return (req, res, next) => {
-      this.id = idExtractFromReq(req);
-      req.cm = this;
+      const cm = new CacheManager(this.type, this.ttl, idExtractFromReq(req));
+      req.cm = cm;
       return next();
     };
   }

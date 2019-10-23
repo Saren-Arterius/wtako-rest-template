@@ -11,9 +11,6 @@ export const updateDB = async () => {
   if (!rows.length) {
     console.log('[DB] Creating database');
     await createKnex.raw(`CREATE DATABASE ${CONFIG.knex.connection.database}`);
-    console.log('[DB] Creating extension');
-    await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-    await knex.raw('CREATE EXTENSION IF NOT EXISTS "bktree"');
   }
   console.log('[DB] knex migrate:latest');
   await knex.migrate.latest({directory: '../migrations'});
