@@ -11,19 +11,19 @@ Ensure docker-compose installed:
 
 # Access web
 1. `$ ssh <server ip> -L 31380:localhost:31380`
-2. Ensure docker started
+2. Ensure server started
 3. Open http://localhost:31380/
 
 # Access pgAdmin
 1. `$ ssh <server ip> -L 31300:localhost:31300`
-2. Ensure docker started
+2. Ensure server started
 3. Open http://localhost:31300/browser/
 4. Login (email: admin@example.com, password: password)
 5. Create new server (host: postgres, username: postgres, password: password)
 
 # Access phpredmin
 1. `$ ssh <server ip> -L 31301:localhost:31301`
-2. Ensure docker started
+2. Ensure server started
 3. Open http://localhost:31301
 4. Login (email: admin, password: admin)
 
