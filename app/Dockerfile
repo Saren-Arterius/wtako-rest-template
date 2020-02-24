@@ -1,4 +1,4 @@
-FROM node:12-alpine
+FROM node:13-alpine
 
 RUN npm config set unsafe-perm true
 RUN npm install -g nodemon
@@ -11,5 +11,7 @@ RUN sh -c 'echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/ap
 ADD package.json /src/package.json
 ADD package-lock.json /src/package-lock.json
 RUN npm install
+# If 'sharp' is needed
+# RUN npm install sharp@^0.23.4
 
 CMD npm run dev

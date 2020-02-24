@@ -12,6 +12,8 @@ services:
     ports:
       - 31380:3000
     restart: always
+    # environment:
+    #   PROD: 1
   postgres:
     build: ./postgres
     restart: always
@@ -21,7 +23,7 @@ services:
     environment:
       POSTGRES_PASSWORD: password
   pgadmin:
-    image: dpage/pgadmin4
+    build: ./pgadmin
     restart: always
     ports:
       - 127.0.0.1:31300:80

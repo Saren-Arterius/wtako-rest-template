@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import http from 'http';
+import cluster from 'express-cluster';
 import app from '../app';
 
 const normalizePort = (val) => {
@@ -15,7 +16,6 @@ const normalizePort = (val) => {
 
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
-
 const server = http.createServer(app);
 server.on('error', (error) => {
   if (error.syscall !== 'listen') {
@@ -39,4 +39,10 @@ server.on('listening', () => {
   const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;
   console.log(`Listening on ${bind}`);
 });
-server.listen(port);
+
+cluster((worker) => {
+  app.worker = worker;
+  app.main();
+  server.listen(port);
+});
+
