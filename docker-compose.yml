@@ -34,7 +34,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: password
     command: /bin/bash /entry.sh
   redis:
-    image: redis:5-alpine
+    image: redis:6-alpine
     restart: always
     volumes:
       - ./redis/config/redis.conf:/etc/redis.conf
