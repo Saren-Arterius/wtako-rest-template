@@ -6,7 +6,8 @@ export const configDev = {
     environment: 'dev'
   },
   upload: {
-    fileSizeLimit: 10 * 1024 * 1024 // 10MB
+    fileSizeLimit: 100 * 1024 * 1024, // 100MB,
+    avatarSizeLimit: 10 * 1024 * 1024 // 10MB,
   },
   timezone: {
     postgres: 'Asia/Hong_Kong',
@@ -28,20 +29,27 @@ export const configDev = {
       database: 'app_backend_dev'
     }
   },
-  firebase: {
-    serviceAccountPath: './credentials/xxx.json',
-    databaseURL: 'https://xxx.firebaseio.com'
-  },
   trustedHosts: {
-    localhost: true
+    localhost: true,
+    '127.0.0.1': true,
+    'domain.tld': true,
+    'dev.domain.tld': true,
+    'docs.domain.tld': true,
+    '192.168.1.223': true,
+    '192.168.1.14': true
   },
   cfPurgeCache: {
     prependPath: null,
     defaultOptions: {
       method: 'POST',
-      uri: 'https://api.cloudflare.com/client/v4/zones/xxx/purge_cache',
-      headers: secrets.cf_auth_headers,
-      json: true
+      url: 'https://api.cloudflare.com/client/v4/zones/xxx/purge_cache',
+      headers: secrets.cf_auth_headers
     }
+  },
+  selfBaseURL: 'https://api.domain.tld',
+  jwtSecret: 'jwt_secret',
+  firebase: {
+    serviceAccountPath: './credentials/firebase.json',
+    databaseURL: 'https://xxx.firebaseio.com/'
   }
 };

@@ -8,6 +8,7 @@ Ensure docker-compose installed:
 
 # Switch to production environment
 1. Uncomment line 15, 16 of `docker-compose.yml`
+2. Or better, create a prod git branch
 
 # Access web
 1. `$ ssh <server ip> -L 31380:localhost:31380`
@@ -18,15 +19,15 @@ Ensure docker-compose installed:
 1. `$ ssh <server ip> -L 31300:localhost:31300`
 2. Ensure server started
 3. Open http://localhost:31300/browser/
-4. Login (email: admin@example.com, password: password)
-5. Create new server (host: postgres, username: postgres, password: password)
+4. Login (email: admin@example.com, password: pgadmin_password)
+5. Create new server (host: postgres, username: postgres, password: pg_password)
 
-# Access phpredmin
-1. `$ ssh <server ip> -L 31301:localhost:31301`
-2. Ensure server started
-3. Open http://localhost:31301
-4. Login (email: admin, password: admin)
-
+# Password strings to find and replace
+- `pg_password`
+- `pgadmin_password`
+- `redis_password`
+- `jwt_secret`
+- 
 # Update from git, rebuild docker image if needed, and restart server (also starts on boot)
 1. `# ./update-restart.sh`
 

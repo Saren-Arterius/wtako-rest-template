@@ -1,10 +1,18 @@
-import rp from 'request-promise';
+import axios from 'axios';
 import cjkCount from 'cjk-count';
 import Boom from '@hapi/boom';
 import objectAssignDeep from 'object-assign-deep';
+import crypto from 'crypto';
+import FormData from 'form-data';
+import fs from 'fs/promises';
 
-import {knex, CONFIG, redis} from '../common';
+import {knex, CONFIG, redis, firebase} from '../common';
 import {AuthedRequest} from '../types/auth';
+import {Notification} from '../types/tables';
+
+export const getChatID = (senderID, recipientID) => {
+  return [senderID, recipientID].sort().join('-');
+};
 
 export const sleep = ms => new Promise(rs => setTimeout(rs, ms));
 
@@ -39,7 +47,8 @@ export const tryPurgeCFCache = async (files: [String]) => {
     {purge_everything: true};
   try {
     console.log('tryPurgeCFCache', body);
-    const res = await rp(Object.assign({}, CONFIG.cfPurgeCache.defaultOptions, {body}));
+    const config = Object.assign({}, CONFIG.cfPurgeCache.defaultOptions, {body});
+    const res = await axios.post(config);
     console.log(res);
     return true;
   } catch (e) {
@@ -50,6 +59,12 @@ export const tryPurgeCFCache = async (files: [String]) => {
 
 export const sqlJSONTables = tables => tables.map(t => knex.raw(`to_json("${t}".*) as "${t}"`));
 
+export const randomBytes = (size = 32) => new Promise((rs, rj) => {
+  crypto.randomBytes(size, (err, buf) => {
+    if (err) return rj(err);
+    return rs(buf.toString('hex'));
+  });
+});
 
 export const paging = (req, res, next) => {
   let page = parseInt(req.params.page, 10) || 0;
@@ -58,67 +73,11 @@ export const paging = (req, res, next) => {
   return next();
 };
 
-export const hasVotedUpOrDown = async (table, id, countKey, votesField = 'vote_score') => {
-  for (const key of [`${table}:${id}:${votesField}:up`, `${table}:${id}:${votesField}:down`]) {
-    const exist = await redis.exists(key);
-    if (!exist) continue;
-
-    // copy pf key
-    const checkKey = `${key}:${countKey}`;
-    const check = await redis.getBuffer(key);
-    await redis.setBuffer(checkKey, check);
-
-    // whether the tmp pfcount is updated
-    const added = await redis.pfadd(checkKey, countKey);
-    await redis.del(checkKey);
-
-    // not updated = already added
-    if (!parseInt(added, 10)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-export const vote = async (table, id, type, countKey, votesField = 'vote_score') => {
-  const [row] = await knex(table).select().where('id', id);
-  if (!row) return null;
-
-  let newScore = row[votesField];
-  const alreadyVoted = await hasVotedUpOrDown(table, id, countKey, votesField);
-  if (alreadyVoted) return {[votesField]: newScore};
-
-  const upKey = `${table}:${id}:${votesField}:up`;
-  const downKey = `${table}:${id}:${votesField}:down`;
-  const voteKey = type === 'up' ? upKey : downKey;
-  const updated = await redis.pfadd(voteKey, countKey);
-  if (parseInt(updated, 10)) {
-    newScore = parseInt((await redis.pfcount(upKey)), 10) - parseInt((await redis.pfcount(downKey)), 10);
-    await knex(table)
-      .update({
-        [votesField]: newScore
-      })
-      .where('id', id);
-  }
-  return {[votesField]: newScore};
-};
-
-export const updateVotes = async (table, id, type, votesField = 'vote_score', ctx = knex) => {
-  const [row] = await ctx(table).select().where('id', id);
-  if (!row) return null;
-
-  let newScore = row[votesField];
-
-  const upKey = `${table}:${id}:${votesField}:up`;
-  const downKey = `${table}:${id}:${votesField}:down`;
-  newScore = parseInt((await redis.pfcount(upKey)), 10) - parseInt((await redis.pfcount(downKey)), 10);
-  await ctx(table)
-    .update({
-      [votesField]: newScore
-    })
-    .where('id', id);
-
-  return {[votesField]: newScore};
+export const noCache = (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); // HTTP 1.1.
+  res.setHeader('Pragma', 'no-cache'); // HTTP 1.0.
+  res.setHeader('Expires', '0'); // Proxies.
+  next();
 };
 
 export const requireLogin = (req: AuthedRequest, res, next) => {
@@ -128,8 +87,15 @@ export const requireLogin = (req: AuthedRequest, res, next) => {
   return next();
 };
 
+export const rejectLogin = (req: AuthedRequest, res, next) => {
+  if (req.user) {
+    return next(Boom.badRequest('Already logged in'));
+  }
+  return next();
+};
+
 export const rejectBanned = (req: AuthedRequest, res, next) => {
-  if (req.user.ban_reason) {
+  if (req.user.details.ban_reason) {
     return next(Boom.unauthorized('Banned'));
   }
   return next();
@@ -163,25 +129,6 @@ export const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * ((max - min) + 1)) + min;
 };
 
-export const generateID = (length) => {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789';
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-};
-
-export const findUniqueID = async (table, idField = 'id') => {
-  for (let l = 4; l < 10; l++) {
-    const id = generateID(l);
-    const [row] = await knex(table).select().where(idField, id);
-    if (row) continue;
-    return id;
-  }
-  throw new Error('Impossible lol wtf!');
-};
-
 type ClientConfig = typeof CONFIG.clientConfig;
 export const getClientConfig = async (): Promise<ClientConfig> => {
   const conf = await redis.get('override:client-config');
@@ -191,36 +138,43 @@ export const getClientConfig = async (): Promise<ClientConfig> => {
   return cc;
 };
 
-/*
-export const requireAdminAuth = async (req: AuthedRequest, res, next) => {
-  const cc = await getClientConfig();
-  if (req.user && cc.admin[req.user.id]) return next();
-  if (req.headers.authorization === SECRETS.panel_auth) return next();
-  return next(Boom.forbidden());
-};
-*/
-
-const deg2rad = (deg) => {
-  return deg * (Math.PI / 180);
-};
-
-export const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1); // deg2rad below
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    (Math.sin(dLat / 2) * Math.sin(dLat / 2)) +
-    (Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2));
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
-  return d;
-};
-
 export const retainFields = (object, fields) => {
   const fieldSet = new Set(fields);
   Object.keys(object).forEach((f) => {
     if (!fieldSet.has(f)) delete object[f];
   });
+  return object;
+};
+
+export const tryRemoveFiles = async (files) => {
+  for (const f of files) {
+    try {
+      await fs.rm(f, {recursive: true});
+    } catch (error) {
+      console.error(error);
+    }
+  }
+};
+
+
+export const clamp = (num, min, max) => {
+  // eslint-disable-next-line no-nested-ternary
+  return num <= min ? min : num >= max ? max : num;
+};
+
+export const axiosMultipart = (data) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([k, v]) => formData.append(k, v));
+  const config = {
+    headers: Object.assign(
+      {},
+      formData.getHeaders(),
+      {
+        'Content-Length': formData.getLengthSync()
+      }
+    )
+  };
+  return {formData, config};
 };
 
 /*
@@ -249,3 +203,69 @@ export const announceToAll = async (announcement) => {
   return announcement;
 };
 */
+
+export function numberInGroups (n) {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') || 0;
+}
+
+/*
+export const getDisplayPriceString = (price, commas = false) => {
+  if (!price) return '0';
+  const n = ethers.FixedNumber.fromValue(price, 18, 'fixed').toString();
+  if (!commas) return n;
+  const [dec, point] = n.split('.');
+  if (point === '0') return numberInGroups(dec);
+  return [numberInGroups(dec), point.substr(0, 5)].join('.');
+};
+*/
+
+export const notifyWithFirebase = async (trx, data, type = 'article') => {
+  const [n]: [Notification] = await trx('notification').insert(data).returning('*');
+  const ref = `recipient/${n.recipient}/notification-${type}`;
+  return {
+    ref,
+    data: {[n.recipient]: n.created_at}
+  };
+};
+
+export const massUpdateFirebase = async (updates) => {
+  const updateMap = {};
+  for (const update of updates) {
+    if (updateMap[update.ref]) continue;
+    updateMap[update.ref] = true;
+    console.log(update);
+    await firebase.database()
+      .ref(update.ref)
+      .update(update.data);
+  }
+};
+
+
+export const formatDate = (ms, cut = '-') => {
+  const date = new Date(ms);
+  const YY = date.getFullYear() + cut;
+  const MM =
+    (date.getMonth() + 1 < 10
+      ? `0${date.getMonth() + 1}`
+      : date.getMonth() + 1) + cut;
+  const DD = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate();
+  const hh = `${date.getHours() < 10 ? `0${date.getHours()}` : date.getHours()}:`;
+  const mm = `${date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes()}:`;
+  const ss = date.getSeconds() < 10 ? `0${date.getSeconds()}` : date.getSeconds();
+  return `${YY + MM + DD} ${hh}${mm}${ss}`;
+};
+
+export const ordinalSuffix = (i) => {
+  const j = i % 10;
+  const k = i % 100;
+  if (j === 1 && k !== 11) {
+    return `${i}st`;
+  }
+  if (j === 2 && k !== 12) {
+    return `${i}nd`;
+  }
+  if (j === 3 && k !== 13) {
+    return `${i}rd`;
+  }
+  return `${i}th`;
+};

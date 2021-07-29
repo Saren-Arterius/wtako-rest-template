@@ -6,14 +6,10 @@ cd $SCRIPTPATH
 set -x
 
 filename=pg_backup
-if [[ -z "${PROD}" ]]; then
-  dbname="app_backend_dev"
-else
-  dbname="app_backend_prod"
-fi
+dbname="app_backend_dev"
 
 rm -f pgadmin/data/storage/admin_example.com/${filename}
-docker-compose exec -T pgadmin sh -c "PGPASSWORD='password' /usr/local/pgsql-12/pg_dump --file '/var/lib/pgadmin/storage/admin_example.com/${filename}' --host 'postgres' --port '5432' --username 'postgres' --verbose --format=c --blobs --data-only --schema 'public' --dbname '${dbname}' --data-only"
+docker-compose exec -T pgadmin sh -c "PGPASSWORD='pg_password' /usr/local/pgsql-13/pg_dump --file '/var/lib/pgadmin/storage/admin_example.com/${filename}' --host 'postgres' --port '5432' --username 'postgres' --verbose --format=c --blobs --data-only --schema 'public' --dbname '${dbname}' --data-only"
 tar_filename=${HOME}/app_backup_`hostname`.tar.gz
 
 sudo tar -acvf ${tar_filename} pgadmin/data/storage/admin_example.com/${filename} redis/data/dump.rdb

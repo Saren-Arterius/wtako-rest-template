@@ -1,4 +1,4 @@
-FROM groonga/pgroonga:latest-alpine-12-slim
+FROM groonga/pgroonga:latest-alpine-13-slim
 
 RUN sh -c 'echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && apk update'
 RUN apk add git build-base 

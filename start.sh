@@ -9,4 +9,4 @@ uidgid=`docker-compose exec redis sh -c 'cat /etc/passwd | grep redis | grep -oE
 uidgid=`echo $uidgid | tr '\r' ' '`
 echo $uidgid
 sudo mkdir -p redis/data && sudo chown -R $uidgid redis/data
-docker-compose logs --tail=1000 -f app
+docker-compose logs --tail=100 -f app

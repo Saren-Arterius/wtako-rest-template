@@ -1,0 +1,12 @@
+version: "2"
+services:
+  nginx:
+    image: nginx:1.20-alpine
+    volumes:
+     - ./conf/domain.tld.conf:/etc/nginx/conf.d/domain.tld.conf
+     - ./conf/api.domain.tld.conf:/etc/nginx/conf.d/api.domain.tld.conf
+     - ./conf/docs.domain.tld.conf:/etc/nginx/conf.d/docs.domain.tld.conf
+     - ./html:/www
+     - ./docs:/docs
+    network_mode: host
+    restart: always

@@ -4,6 +4,7 @@ services:
     build: ./app
     volumes:
       - ./app:/src/app
+      - ./app/data:/data
       - ./app/logs/npm:/home/node/.npm/_logs
     links:
       - redis:redis
@@ -21,7 +22,7 @@ services:
       - ./postgres/config/postgresql.conf:/etc/postgresql.conf
       - ./postgres/data:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: pg_password
   pgadmin:
     build: ./pgadmin
     restart: always
@@ -31,23 +32,12 @@ services:
       - ./pgadmin/data:/var/lib/pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: password
+      PGADMIN_DEFAULT_PASSWORD: pgadmin_password
     command: /bin/bash /entry.sh
   redis:
-    image: redis:5-alpine
+    image: redis:6-alpine
     restart: always
     volumes:
       - ./redis/config/redis.conf:/etc/redis.conf
       - ./redis/data:/var/lib/redis
     command: redis-server /etc/redis.conf
-  phpredmin:
-    image: sasanrose/phpredmin
-    restart: always
-    links:
-      - redis:redis
-    ports:
-      - 127.0.0.1:31301:80
-    depends_on:
-      - redis
-    environment:
-      PHPREDMIN_DATABASE_REDIS_0_HOST: redis

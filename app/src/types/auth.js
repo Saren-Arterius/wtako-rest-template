@@ -1,28 +1,17 @@
 import {Request} from 'express';
 
-export interface KYCRequest extends Request {
+export interface IPRequest extends Request {
   userIP: String,
-  deviceID: String,
 }
 
-/*
 export interface User {
-  id: String,
-  name: String,
-  photo_url: String,
-  created_at: Number,
-  ban_reason?: Object
+  address: String,
+  username?: String,
+  name?: String,
+  description?: String,
+  details?: Object,
 }
 
-export interface AuthedRequest extends KYCRequest {
+export interface AuthedRequest extends IPRequest {
   user: User
 }
-
-export interface FirebaseAuth {
-  uid: String,
-  picture: String,
-  name: String,
-  email: String,
-  email_verified: Boolean,
-}
-*/

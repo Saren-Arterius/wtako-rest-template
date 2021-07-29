@@ -1,12 +1,14 @@
 import express from 'express';
 import logger from 'morgan';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+
 import Boom from '@hapi/boom';
-import Queue from 'bull';
 import url from 'url';
+import jwt from 'jsonwebtoken';
 
 import {updateDB, sleep} from './utils/misc';
-import {CONFIG} from './common';
+import {CONFIG, knex, redis} from './common';
 
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(logger('dev'));
 app.use(express.static('public'));
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({extended: true, limit: '100mb'}));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const tmp = req.url.split('?');
@@ -59,12 +62,28 @@ app.use((req, res, next) => {
     req.connection.remoteAddress;
   req.deviceID = req.headers['x-gateway-id'] ||
     req.headers['X-GATEWAY-ID'];
+
   next();
 });
 
 // user system
-/*
 app.use(async (req, res, next) => {
+  const token = req.query.token || req.headers.authorization;
+  if (!token || token.startsWith('Basic ')) {
+    return next();
+  }
+  const decoded = jwt.verify(token, CONFIG.jwtSecret);
+  const [profile] = await knex('profile')
+    .select()
+    .where('profile.address', decoded.address)
+    .leftJoin('profile_instagram', 'profile.address', 'profile_instagram.ig_address').limit(1);
+  if (profile) {
+    req.user = profile;
+  } else {
+    req.user = decoded;
+  }
+  return next();
+  /*
   if (!process.env.PROD && req.query.user_id) {
     const [user]: [User] = await knex('user').select().where('id', req.query.user_id);
     req.user = user;
@@ -126,8 +145,8 @@ app.use(async (req, res, next) => {
   }
   req.user = user;
   return next();
+  */
 });
-*/
 
 app.use('/', require('./routes/index'));
 
@@ -147,24 +166,6 @@ process.on('unhandledRejection', (reason, p) => {
   // process.exit(1);
 });
 
-
-const queue = new Queue('worker', {redis: CONFIG.redis});
-
-queue.process(async (job) => {
-  console.log('[Worker] Working with job data', job.data);
-  await sleep(1000);
-  console.log('[Worker] Done');
-});
-
-const doSomething = async () => {
-  console.log('[Main] Doing something');
-  await sleep(1000);
-  for (let i = 0; i < 3; i++) {
-    queue.add({rand: Math.random()});
-  }
-  console.log('[Main] Done');
-};
-
 app.main = (async () => {
   if (app.worker.id !== 1) return;
   while (updateDB) {
@@ -177,14 +178,21 @@ app.main = (async () => {
     }
   }
   console.log('[Main] worker ID:', app.worker.id);
-  while (true) {
-    try {
-      await doSomething();
-    } catch (e) {
-      console.error(e);
-    }
-    await sleep(60000);
-  }
+
+  const value = Date.now();
+  const key = 'lastStart';
+  await knex('config').insert({
+    key,
+    value
+  })
+    .onConflict('key')
+    .merge();
+  const [pgCheck] = await knex('config').select().where('key', key);
+  console.log({pgCheck});
+
+  await redis.set(key, value);
+  const redisCheck = await redis.get(key);
+  console.log({redisCheck});
 });
 
 module.exports = app;

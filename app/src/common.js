@@ -1,16 +1,15 @@
 import Redis from 'ioredis';
 import pg from 'pg';
-import fbAdmin from 'firebase-admin';
 import multer from 'multer';
+import createKnex from 'knex';
+import fbAdmin from 'firebase-admin';
 
-import {configProd} from './config/prod';
 import {configDev} from './config/dev';
 import {secretsDev} from './config/secrets-dev';
-import {secretsProd} from './config/secrets-prod';
-
 // process.env.PROD = 1;
-export const SECRETS = process.env.PROD ? secretsProd : secretsDev;
-export const CONFIG = process.env.PROD ? configProd : configDev;
+
+export const SECRETS: typeof secretsDev = secretsDev;
+export const CONFIG: typeof configDev = configDev;
 
 const knexConfig = Object.assign({}, CONFIG.knex);
 knexConfig.pool = {
@@ -23,23 +22,28 @@ knexConfig.pool = {
 
 pg.types.setTypeParser(20, 'text', parseInt);
 
-export const knex = require('knex')(knexConfig);
+export const knex = createKnex(knexConfig);
 
 export const redis = new Redis(CONFIG.redis);
 
-/*
-fbAdmin.initializeApp({
-  credential: fbAdmin.credential.cert(require(CONFIG.firebase.serviceAccountPath)),
-  databaseURL: CONFIG.firebase.databaseURL
+export const userFileUpload = multer({
+  dest: '/data/upload',
+  limits: {
+    fileSize: CONFIG.upload.fileSizeLimit
+  }
 });
-*/
-
-export const firebase = fbAdmin;
 
 const storage = multer.memoryStorage();
-export const userPhotoUpload = multer({
+export const userPhotoUploadRam = multer({
   storage,
   limits: {
     fileSize: CONFIG.upload.fileSizeLimit
   }
 });
+
+// fbAdmin.initializeApp({
+//   credential: fbAdmin.credential.cert(require(CONFIG.firebase.serviceAccountPath)),
+//   databaseURL: CONFIG.firebase.databaseURL
+// });
+
+export const firebase = fbAdmin;
