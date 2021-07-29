@@ -12,7 +12,7 @@ WORKDIR /src
 
 ADD package.json /src/package.json
 ADD package-lock.json /src/package-lock.json
-RUN npm install
+RUN npm install --legacy-peer-deps
 # If 'sharp' is needed
 # RUN npm install sharp@^0.23.4
 
