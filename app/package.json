@@ -12,8 +12,8 @@
     "clean": "rm -rf dist && mkdir dist",
     "dev": "npm run build-watch & sleep 5 && nodemon --exec sh -c 'npm start'",
     "prod": "npm run build && npm start",
-    "build": "babel app/src --out-dir app/dist --copy-files",
-    "build-watch": "babel app/src --out-dir app/dist --copy-files --watch"
+    "build": "cd app && babel src --out-dir dist --copy-files",
+    "build-watch": "cd app && babel src --out-dir dist --copy-files --watch"
   },
   "dependencies": {
     "@hapi/boom": "^9.1.2",

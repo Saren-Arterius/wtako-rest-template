@@ -12,6 +12,8 @@ WORKDIR /src
 
 ADD package.json /src/package.json
 ADD package-lock.json /src/package-lock.json
+ADD .babelrc /src/.babelrc
+
 RUN npm install --legacy-peer-deps
 # If 'sharp' is needed
 # RUN npm install sharp@^0.23.4
