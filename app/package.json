@@ -24,7 +24,7 @@
     "cheerio": "^1.0.0-rc.6",
     "cjk-count": "^1.0.3",
     "cookie-parser": "^1.4.5",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-cluster": "0.0.5",
     "firebase-admin": "^9.9.0",
     "form-data": "^4.0.0",
