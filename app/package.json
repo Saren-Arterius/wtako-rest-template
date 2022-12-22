@@ -30,7 +30,7 @@
     "form-data": "^4.0.0",
     "ioredis": "^4.27.1",
     "joi": "^17.4.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "knex": "^0.21.19",
     "knex-types": "^0.2.0",
     "moment": "^2.27.0",
